@@ -143,11 +143,13 @@ export default function CreativeIntelPage() {
               <label htmlFor="network">Ad network</label>
               <select id="network" value={form.network} onChange={set('network')}>
                 <option value="">All networks</option>
-                <option value="facebook">Meta / Facebook</option>
-                <option value="admob">AdMob</option>
-                <option value="unity">Unity Ads</option>
-                <option value="applovin">AppLovin</option>
-                <option value="ironsource">IronSource</option>
+                <option value="Instagram">Meta / Instagram</option>
+                <option value="Admob">AdMob</option>
+                <option value="Applovin">AppLovin</option>
+                <option value="Adcolony">AdColony</option>
+                <option value="Chartboost">Chartboost</option>
+                <option value="Mopub">MoPub</option>
+                <option value="Pinterest">Pinterest</option>
               </select>
             </div>
           </div>
