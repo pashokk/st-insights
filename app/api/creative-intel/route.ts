@@ -27,12 +27,13 @@ export async function POST(req: NextRequest) {
         app_ids: appId,
         start_date: start,
         end_date: end,
-        limit: '8',
-        sort_by: sortBy || 'impression_share',
+        limit: '10',
+        countries: 'US',
       })
       if (network) params.set('networks', network)
+      if (sortBy) params.set('sort_by', sortBy)
 
-      const stUrl = `https://api.sensortower.com/v1/${platform || 'ios'}/creative_intelligence/top_creatives?${params}`
+      const stUrl = `https://api.sensortower.com/v1/${platform || 'ios'}/ad_intel/creatives?${params}`
 
       let creatives: STCreative[] = []
       try {
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
           )
         }
         const stData = await stRes.json()
-        creatives = stData.creatives || stData.data || []
+        creatives = stData.creatives || stData.data || stData.results || []
       } catch (fetchErr) {
         return NextResponse.json(
           { error: `Failed to reach SensorTower for ${appId}: ${String(fetchErr)}` },
