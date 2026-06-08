@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
       })
       if (network) params.set('networks', network)
       if (sortBy) params.set('sort_by', sortBy)
+      else params.set('sort_by', 'share')
 
       const stUrl = `https://api.sensortower.com/v1/${platform || 'ios'}/ad_intel/creatives?${params}`
 

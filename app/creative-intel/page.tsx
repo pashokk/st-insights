@@ -9,7 +9,7 @@ const DEFAULT_FORM: FormState = {
   appIds: '',
   platform: 'ios',
   days: '14',
-  sortBy: 'impression_share',
+  sortBy: 'share',
   network: '',
   context: '',
 }
@@ -133,9 +133,10 @@ export default function CreativeIntelPage() {
             <div className="field">
               <label htmlFor="sortBy">Sort by</label>
               <select id="sortBy" value={form.sortBy} onChange={set('sortBy')}>
-                <option value="impression_share">Impression share</option>
-                <option value="days_seen">Days seen</option>
-                <option value="first_seen_days_ago">Newest first</option>
+                <option value="share">Impression share</option>
+                <option value="first_seen_at">Newest first</option>
+                <option value="last_seen_at">Most recent</option>
+                <option value="duration">Duration</option>
               </select>
             </div>
 
