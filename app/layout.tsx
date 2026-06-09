@@ -4,7 +4,7 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'ST Insights',
   description: 'Competitor creative analysis powered by SensorTower + Claude',
-  icons: { icon: '/icon.svg', apple: '/icon.svg' },
+  icons: { icon: '/icon.png', apple: '/icon.png' },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
