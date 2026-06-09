@@ -28,7 +28,8 @@ export interface FormState {
   appIds: string
   platform: 'ios' | 'android'
   days: '7' | '14' | '30'
-  sortBy: 'impression_share' | 'days_seen' | 'first_seen_days_ago'
+  sortBy: string
   network: string
+  countries: string
   context: string
 }

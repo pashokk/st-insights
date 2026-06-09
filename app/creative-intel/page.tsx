@@ -11,6 +11,7 @@ const DEFAULT_FORM: FormState = {
   days: '30',
   sortBy: 'share',
   network: 'Applovin',
+  countries: 'US,GB,JP,DE,FR',
   context: '',
 }
 
@@ -48,6 +49,7 @@ export default function CreativeIntelPage() {
           days: Number(form.days),
           sortBy: form.sortBy,
           network: form.network,
+          countries: form.countries,
           context: form.context.trim(),
         }),
       })

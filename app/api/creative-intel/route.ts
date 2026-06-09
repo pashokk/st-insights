@@ -13,7 +13,7 @@ function getDateRange(days: number) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { appIds, stKey, platform, days, sortBy, network, context } = await req.json()
+    const { appIds, stKey, platform, days, sortBy, network, countries, context } = await req.json()
 
     if (!stKey) return NextResponse.json({ error: 'Missing SensorTower API key' }, { status: 400 })
     if (!appIds?.length) return NextResponse.json({ error: 'Missing app IDs' }, { status: 400 })
@@ -29,9 +29,11 @@ export async function POST(req: NextRequest) {
         end_date: end,
         limit: '10',
         sort_by: sortBy || 'share',
+        networks: network || 'Applovin',
+        countries: countries || 'US,GB,JP,DE,FR',
       })
-      params.set('networks', network || 'Applovin')
 
+      console.log('ST URL:', `https://api.sensortower.com/v1/${platform || 'ios'}/ad_intel/creatives?app_ids=${appId}&start_date=${start}&end_date=${end}&networks=${network}&countries=${countries || 'US,GB,JP,DE,FR'}`)
       const stUrl = `https://api.sensortower.com/v1/${platform || 'ios'}/ad_intel/creatives?${params}`
 
       let creatives: STCreative[] = []
