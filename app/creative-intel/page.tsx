@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import CreativeCard from '@/components/CreativeCard'
 import { AppResult, FormState, AnalysisResponse } from '@/types'
 
@@ -20,10 +20,15 @@ export default function CreativeIntelPage() {
     ...DEFAULT_FORM,
     stKey: typeof window !== 'undefined' ? (localStorage.getItem('st_api_key') || '') : '',
   }))
+  const [stKeyConfigured, setStKeyConfigured] = useState(false)
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
   const [results, setResults] = useState<AppResult[]>([])
+
+  useEffect(() => {
+    fetch('/api/config').then(r => r.json()).then(d => setStKeyConfigured(!!d.stKeyConfigured))
+  }, [])
 
   const set = (key: keyof FormState) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -97,18 +102,23 @@ export default function CreativeIntelPage() {
         </header>
 
         <section className="config-section">
-          <div className="field full">
-            <label htmlFor="stKey">SensorTower API key</label>
-            <input
-              id="stKey"
-              type="password"
-              placeholder="your-sensortower-api-key"
-              value={form.stKey}
-              onChange={set('stKey')}
-              autoComplete="off"
-            />
-            <span className="field-note">Used server-side only — never exposed to the browser</span>
-          </div>
+          {!stKeyConfigured && (
+            <div className="field full">
+              <label htmlFor="stKey">SensorTower API key</label>
+              <input
+                id="stKey"
+                type="password"
+                placeholder="your-sensortower-api-key"
+                value={form.stKey}
+                onChange={set('stKey')}
+                autoComplete="off"
+              />
+              <span className="field-note">Used server-side only — never exposed to the browser</span>
+            </div>
+          )}
+          {stKeyConfigured && (
+            <div className="field-note configured-note">✓ SensorTower API key configured via environment</div>
+          )}
 
           <div className="field full">
             <label htmlFor="appIds">Competitor app IDs <span className="field-note-inline">(one per line — iOS bundle ID or Android package name)</span></label>

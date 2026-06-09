@@ -15,7 +15,8 @@ export async function POST(req: NextRequest) {
   try {
     const { appIds, stKey, platform, days, sortBy, network, countries, context } = await req.json()
 
-    if (!stKey) return NextResponse.json({ error: 'Missing SensorTower API key' }, { status: 400 })
+    const resolvedKey = stKey || process.env.SENSORTOWER_API_KEY
+    if (!resolvedKey) return NextResponse.json({ error: 'Missing SensorTower API key' }, { status: 400 })
     if (!appIds?.length) return NextResponse.json({ error: 'Missing app IDs' }, { status: 400 })
 
     const { start, end } = getDateRange(Number(days) || 14)
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
       const countryStr = (countries || 'US,GB,JP,DE,FR,KR,BR,AU,CA,MX').split(',').map((c: string) => c.trim()).join(',')
       // Append countries as raw comma-separated string (not URL-encoded) so ST accepts it
       const adTypes = 'video,video-rewarded,image,banner,full_screen,image-banner,image-interstitial,image-other'
-      const stUrl = `${base}?auth_token=${encodeURIComponent(stKey)}&app_ids=${encodeURIComponent(appId)}&start_date=${start}&end_date=${end}&networks=${encodeURIComponent(network || 'Applovin')}&countries=${countryStr}&ad_types=${adTypes}&limit=50`
+      const stUrl = `${base}?auth_token=${encodeURIComponent(resolvedKey)}&app_ids=${encodeURIComponent(appId)}&start_date=${start}&end_date=${end}&networks=${encodeURIComponent(network || 'Applovin')}&countries=${countryStr}&ad_types=${adTypes}&limit=50`
 
       console.log('ST URL:', `${base}?app_ids=${appId}&start_date=${start}&end_date=${end}&networks=${network || 'Applovin'}&countries=${countryStr}`)
 

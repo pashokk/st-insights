@@ -52,6 +52,7 @@ h1 { font-size: 28px; font-weight: 600; color: var(--text-primary); letter-spaci
 
 label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-secondary); }
 .field-note { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+.configured-note { display: inline-block; margin-bottom: 8px; color: var(--green-text); background: var(--green-bg); padding: 6px 12px; border-radius: var(--radius); }
 .field-note-inline { font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); text-transform: none; letter-spacing: 0; font-weight: 400; }
 
 input[type="password"],
