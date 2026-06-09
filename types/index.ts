@@ -27,7 +27,7 @@ export interface FormState {
   stKey: string
   appIds: string
   platform: 'ios' | 'android'
-  days: '7' | '14' | '30'
+  days: '7' | '14' | '30' | '60' | '90'
   sortBy: string
   network: string
   countries: string
