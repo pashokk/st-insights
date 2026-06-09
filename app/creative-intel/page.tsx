@@ -16,7 +16,10 @@ const DEFAULT_FORM: FormState = {
 }
 
 export default function CreativeIntelPage() {
-  const [form, setForm] = useState<FormState>(DEFAULT_FORM)
+  const [form, setForm] = useState<FormState>(() => ({
+    ...DEFAULT_FORM,
+    stKey: typeof window !== 'undefined' ? (localStorage.getItem('st_api_key') || '') : '',
+  }))
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
@@ -24,7 +27,11 @@ export default function CreativeIntelPage() {
 
   const set = (key: keyof FormState) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => setForm(f => ({ ...f, [key]: e.target.value }))
+  ) => {
+    const value = e.target.value
+    if (key === 'stKey') localStorage.setItem('st_api_key', value)
+    setForm(f => ({ ...f, [key]: value }))
+  }
 
   async function run() {
     setError('')

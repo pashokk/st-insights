@@ -43,7 +43,45 @@ export async function POST(req: NextRequest) {
         console.log('ST URL:', stUrl)
         const stData = await stRes.json()
         console.log('ST response:', JSON.stringify(stData).slice(0, 800))
-        creatives = stData.ad_units || stData.creatives || stData.data || []
+        // ad_units is an array of ad unit objects, each with a nested creatives[] array
+        // Flatten: merge ad_unit metadata onto each nested creative
+        // ST returns ad_units[], each with a nested creatives[] for media URLs
+        // Flatten and normalize field names to match the UI's expectations
+        const adUnits = stData.ad_units || stData.creatives || stData.data || []
+        const today = new Date()
+        creatives = adUnits.flatMap((unit: Record<string, unknown>) => {
+          const unitCreatives = (unit.creatives as Record<string, unknown>[]) || [unit]
+          return unitCreatives.map((c: Record<string, unknown>) => {
+            // Compute days ago from date strings
+            const firstSeenStr = (unit.first_seen_at || c.first_seen_at) as string | undefined
+            const lastSeenStr = (unit.last_seen_at || c.last_seen_at) as string | undefined
+            const daysDiff = (dateStr: string | undefined) => {
+              if (!dateStr) return undefined
+              const diff = Math.floor((today.getTime() - new Date(dateStr).getTime()) / 86400000)
+              return diff >= 0 ? diff : undefined
+            }
+            const firstDaysAgo = daysDiff(firstSeenStr)
+            const lastDaysAgo = daysDiff(lastSeenStr)
+            const daysSeen = (firstDaysAgo != null && lastDaysAgo != null)
+              ? firstDaysAgo - lastDaysAgo
+              : undefined
+            return {
+              ...c,
+              id: c.id || unit.id,
+              network: unit.network || c.network,
+              creative_type: (unit.ad_type || c.ad_type || c.creative_type) as string,
+              impression_share: unit.share as number ?? c.impression_share,
+              first_seen_days_ago: firstDaysAgo,
+              days_seen: daysSeen,
+              first_seen_at: firstSeenStr,
+              last_seen_at: lastSeenStr,
+              thumb_url: c.thumb_url,
+              preview_url: c.preview_url,
+              creative_url: c.creative_url,
+              video_duration: c.video_duration,
+            }
+          })
+        })
       } catch (fetchErr) {
         return NextResponse.json(
           { error: `Failed to reach SensorTower for ${appId}: ${String(fetchErr)}` },
@@ -56,22 +94,66 @@ export async function POST(req: NextRequest) {
         continue
       }
 
-      const creativeSummary = creatives.slice(0, 8).map((c, i) =>
-        `#${i + 1}: id=${c.creative_id || c.id}, type=${c.creative_type || c.type || 'unknown'}, network=${c.network || c.ad_network || 'unknown'}, impression_share=${c.impression_share != null ? (c.impression_share * 100).toFixed(1) + '%' : 'n/a'}, days_seen=${c.days_seen ?? 'n/a'}, first_seen_days_ago=${c.first_seen_days_ago ?? 'n/a'}`
-      ).join('\n')
+      // Enrich each creative with computed producer signals before sending to Claude
+      const todayMs = new Date().getTime()
+      const enrichedForClaude = creatives.slice(0, 50).map((c, i) => {
+        const firstMs = c.first_seen_at ? new Date(c.first_seen_at as string).getTime() : null
+        const lastMs = c.last_seen_at ? new Date(c.last_seen_at as string).getTime() : null
+        const agedays = firstMs ? Math.floor((todayMs - firstMs) / 86400000) : null
+        const lastSeenDaysAgo = lastMs ? Math.floor((todayMs - lastMs) / 86400000) : null
+        const dur = c.video_duration as number | undefined
+
+        // Detect producer-relevant signals
+        const signals: string[] = []
+        if (agedays != null && agedays > 60 && lastSeenDaysAgo != null && lastSeenDaysAgo <= 14)
+          signals.push('ZOMBIE_REACTIVATED: launched ' + agedays + 'd ago, still spending in last 14d')
+        if (agedays != null && agedays > 120 && lastSeenDaysAgo != null && lastSeenDaysAgo <= 7)
+          signals.push('EVERGREEN_LONG_RUNNER: 4+ months old, actively spending this week')
+        if (dur != null && dur < 20 && (c.network === 'Applovin' || c.network === 'Unity'))
+          signals.push('SHORT_VIDEO_ANOMALY: only ' + dur + 's — unusually short for ' + c.network + ' (typically 30-59s preferred)')
+        if (dur != null && dur > 60)
+          signals.push('LONG_VIDEO: ' + dur + 's — longer than typical; likely deep-funnel or tutorial hook')
+        if (agedays != null && agedays <= 14 && (c.impression_share as number) > 0.05)
+          signals.push('NEW_HIGH_SPENDER: launched ' + agedays + 'd ago, already high impression share — fast scaler')
+        if ((c.creative_type === 'image' || c.creative_type === 'banner') && (c.network === 'Applovin' || c.network === 'Unity' || c.network === 'Mintegral'))
+          signals.push('STATIC_ON_VIDEO_NETWORK: image/banner outperforming on a video-dominant network')
+        if (c.creative_type === 'video-rewarded')
+          signals.push('REWARDED_FORMAT: opt-in rewarded placement — audience is highly engaged, copy tested for motivation')
+        const imp = c.impression_share as number
+        if (imp != null && imp > 0.15)
+          signals.push('DOMINANT_CREATIVE: ' + (imp * 100).toFixed(1) + '% impression share — likely their #1 spend driver')
+
+        return `#${i + 1}: id=${c.id}, type=${c.creative_type || 'unknown'}, network=${c.network || 'unknown'}, ` +
+          `impression_share=${imp != null ? (imp * 100).toFixed(1) + '%' : 'n/a'}, ` +
+          `age=${agedays != null ? agedays + 'd' : 'n/a'}, last_seen=${lastSeenDaysAgo != null ? lastSeenDaysAgo + 'd ago' : 'n/a'}, ` +
+          `video_duration=${dur != null ? dur + 's' : 'n/a'}` +
+          (signals.length ? '\n  SIGNALS: ' + signals.join(' | ') : '')
+      }).join('\n')
 
       const msg = await client.messages.create({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: `You are a senior UA creative strategist analyzing competitor ad creatives for a mobile game studio. Given SensorTower metadata, produce actionable insights for a creative producer.
+        max_tokens: 4096,
+        system: `You are a senior UA creative strategist and creative producer advisor for a casual mobile game studio (think merge, match-3, city builders, survival idle — NOT shooters or RPGs).
 
-Per creative: 1-2 sentences on what makes it likely performant, what hook or format it probably uses, and one concrete action the producer can test today. Be specific and tactical.
+Your job: analyze competitor ad creative metadata from SensorTower and produce specific, actionable producer insights that help a creative team decide WHAT to shoot/design next.
+
+For each creative, detect and explain any of these patterns:
+- ZOMBIE_REACTIVATED: old creative that suddenly resumed spending — what about it might be timeless? What hook likely worked?
+- EVERGREEN_LONG_RUNNER: running 4+ months — this is a proven performer; what format/concept makes it durable?
+- SHORT_VIDEO_ANOMALY: under 20s on a network preferring 30-59s — something in those first seconds hooks hard; what's likely in it?
+- LONG_VIDEO: 60s+ video — unusual; likely a tutorial, gameplay loop, or emotional story arc
+- NEW_HIGH_SPENDER: just launched but already high spend — competitor found a winner fast; what creative direction does the genre/network suggest?
+- STATIC_ON_VIDEO_NETWORK: image outperforming on video-heavy networks — the visual is doing all the work; what makes a static win here?
+- REWARDED_FORMAT: opt-in rewarded ad — audience chose to watch; copy must trigger FOMO, curiosity, or reward anticipation
+- DOMINANT_CREATIVE: 15%+ impression share — this is their main spend horse right now; clone the concept direction
+
+For each creative: 2-3 sentences. Name the signal if detected. Say what creative direction to reproduce for a casual game. Give one concrete brief a producer can act on today.
 
 Respond ONLY with valid JSON — no markdown, no preamble, no backticks:
-{"creatives":[{"id":"...","insight":"..."}],"summary":"2-3 sentence strategic pattern summary across all creatives for this app"}`,
+{"creatives":[{"id":"...","insight":"...","signals":["SIGNAL_NAME"]}],"summary":"3-4 sentence strategic read: what patterns dominate, what format/concept is winning, top 1-2 things to reproduce this week"}`,
         messages: [{
           role: 'user',
-          content: `App: ${appId}\n${context ? `Producer context: ${context}\n` : ''}Creatives:\n${creativeSummary}`
+          content: `App: ${appId}\nPlatform: ${platform || 'ios'}\nNetwork filter: ${network || 'Applovin'}\n${context ? `Producer context: ${context}\n` : ''}Creatives:\n${enrichedForClaude}`
         }]
       })
 
@@ -89,11 +171,19 @@ Respond ONLY with valid JSON — no markdown, no preamble, no backticks:
         insightMap[`#${idx + 1}`] = c.insight
       })
 
-      const enriched = creatives.slice(0, 6).map((c, idx) => {
+      const signalsMap: Record<string, string[]> = {}
+      analysis.creatives?.forEach((c, idx) => {
+        const sigs = (c as {id: string; insight: string; signals?: string[]}).signals || []
+        signalsMap[c.id] = sigs
+        signalsMap[`#${idx + 1}`] = sigs
+      })
+
+      const enriched = creatives.slice(0, 50).map((c, idx) => {
         const id = c.creative_id || c.id || ''
         return {
           ...c,
-          insight: insightMap[id] || insightMap[`#${idx + 1}`] || 'No insight generated.'
+          insight: insightMap[id] || insightMap[`#${idx + 1}`] || 'No insight generated.',
+          signals: signalsMap[id] || signalsMap[`#${idx + 1}`] || [],
         }
       })
 
@@ -118,6 +208,12 @@ interface STCreative {
   impression_share?: number
   days_seen?: number
   first_seen_days_ago?: number
+  first_seen_at?: string
+  last_seen_at?: string
+  thumb_url?: string
+  preview_url?: string
+  creative_url?: string
+  video_duration?: number
   insight?: string
   [key: string]: unknown
 }
