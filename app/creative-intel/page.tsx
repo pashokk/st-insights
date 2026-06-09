@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import CreativeCard from '@/components/CreativeCard'
+import AppSearch from '@/components/AppSearch'
 import { AppResult, FormState, AnalysisResponse } from '@/types'
 
 const DEFAULT_FORM: FormState = {
@@ -29,6 +30,18 @@ export default function CreativeIntelPage() {
   useEffect(() => {
     fetch('/api/config').then(r => r.json()).then(d => setStKeyConfigured(!!d.stKeyConfigured))
   }, [])
+
+  function handleAppSelect(appId: string, platform: 'ios' | 'android') {
+    setForm(f => {
+      const existing = f.appIds.split('\n').map(s => s.trim()).filter(Boolean)
+      if (existing.includes(appId)) return f
+      return {
+        ...f,
+        appIds: [...existing, appId].join('\n'),
+        platform,
+      }
+    })
+  }
 
   const set = (key: keyof FormState) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -121,7 +134,12 @@ export default function CreativeIntelPage() {
           )}
 
           <div className="field full">
-            <label htmlFor="appIds">Competitor app IDs <span className="field-note-inline">(one per line — iOS bundle ID or Android package name)</span></label>
+            <label>Search app</label>
+            <AppSearch onSelect={handleAppSelect} />
+          </div>
+
+          <div className="field full">
+            <label htmlFor="appIds">Competitor app IDs <span className="field-note-inline">(one per line — added automatically from search above)</span></label>
             <textarea
               id="appIds"
               placeholder={'1635760774\ncom.example.game2'}
