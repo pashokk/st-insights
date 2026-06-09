@@ -8,8 +8,8 @@ const DEFAULT_FORM: FormState = {
   stKey: '',
   appIds: '',
   platform: 'ios',
-  days: '30',
-  sortBy: 'share',
+  days: '90',
+  sortBy: 'first_seen_at',
   network: 'Applovin',
   countries: 'US,GB,JP,DE,FR',
   context: '',
@@ -129,6 +129,8 @@ export default function CreativeIntelPage() {
                 <option value="7">Last 7 days</option>
                 <option value="14">Last 14 days</option>
                 <option value="30">Last 30 days</option>
+                <option value="60">Last 60 days</option>
+                <option value="90">Last 90 days</option>
               </select>
             </div>
 

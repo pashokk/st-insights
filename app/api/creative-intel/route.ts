@@ -30,8 +30,8 @@ export async function POST(req: NextRequest) {
         `app_ids=${encodeURIComponent(appId)}`,
         `start_date=${start}`,
         `end_date=${end}`,
-        `limit=10`,
-        `sort_by=${sortBy || 'share'}`,
+        `limit=50`,
+        `sort_by=${sortBy || 'first_seen_at'}`,
         `networks=${encodeURIComponent(network || 'Applovin')}`,
         ...countryList.map((c: string) => `countries[]=${encodeURIComponent(c)}`),
       ].join('&')
