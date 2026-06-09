@@ -39,15 +39,16 @@ export default function CreativeCard({ creative: c, appId }: Props) {
   const format = c.creative_type || c.type || '—'
   const imp = c.impression_share != null ? `${(c.impression_share * 100).toFixed(1)}%` : '—'
   const days = c.days_seen != null ? `${c.days_seen}d` : '—'
-  const firstSeen = c.first_seen_at
-    ? c.first_seen_at.slice(0, 10)
+  const firstSeenStr = c.first_seen_at as string | undefined
+  const firstSeen = firstSeenStr
+    ? firstSeenStr.slice(0, 10)
     : c.first_seen_days_ago != null
       ? `${c.first_seen_days_ago}d ago`
       : '—'
-  const cid = (c.creative_id || c.id || 'creative') as string
-  const thumb = c.thumb_url as string | undefined
-  const preview = c.preview_url as string | undefined
-  const mediaUrl = c.creative_url as string | undefined
+  const cid = c.creative_id || c.id || 'creative'
+  const thumb = c.thumb_url
+  const preview = c.preview_url
+  const mediaUrl = c.creative_url
   const isVideo = format === 'video' || format === 'video-rewarded'
 
   return (

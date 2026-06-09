@@ -8,6 +8,13 @@ export interface STCreative {
   impression_share?: number
   days_seen?: number
   first_seen_days_ago?: number
+  first_seen_at?: string
+  last_seen_at?: string
+  thumb_url?: string
+  preview_url?: string
+  creative_url?: string
+  video_duration?: number
+  signals?: string[]
   insight?: string
   [key: string]: unknown
 }
