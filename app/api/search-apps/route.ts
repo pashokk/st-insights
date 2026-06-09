@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import gplay from 'google-play-scraper'
+import gplay, { IAppItem } from 'google-play-scraper'
 
 export interface AppResult {
   appId: string
@@ -28,13 +28,13 @@ async function searchIOS(term: string): Promise<AppResult[]> {
 async function searchAndroid(term: string): Promise<AppResult[]> {
   try {
     const results = await gplay.search({ term, num: 10, country: 'us', lang: 'en' })
-    return results.map((app: Record<string, unknown>) => ({
-      appId: app.appId as string,
-      name: app.title as string,
-      icon: app.icon as string,
-      developer: app.developer as string || '',
+    return results.map((app: IAppItem) => ({
+      appId: app.appId,
+      name: app.title,
+      icon: app.icon,
+      developer: app.developer || '',
       platform: 'android' as const,
-      score: app.score as number,
+      score: app.score,
     }))
   } catch {
     return []
