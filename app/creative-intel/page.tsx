@@ -8,7 +8,7 @@ const DEFAULT_FORM: FormState = {
   stKey: '',
   appIds: '',
   platform: 'ios',
-  days: '14',
+  days: '30',
   sortBy: 'share',
   network: '',
   context: '',
@@ -144,13 +144,17 @@ export default function CreativeIntelPage() {
               <label htmlFor="network">Ad network</label>
               <select id="network" value={form.network} onChange={set('network')}>
                 <option value="">All networks</option>
-                <option value="Instagram">Meta / Instagram</option>
                 <option value="Admob">AdMob</option>
                 <option value="Applovin">AppLovin</option>
-                <option value="Adcolony">AdColony</option>
-                <option value="Chartboost">Chartboost</option>
-                <option value="Mopub">MoPub</option>
-                <option value="Pinterest">Pinterest</option>
+                <option value="BidMachine">BidMachine</option>
+                <option value="Digital Turbine">Digital Turbine</option>
+                <option value="InMobi">InMobi</option>
+                <option value="Mintegral">Mintegral</option>
+                <option value="Moloco">Moloco</option>
+                <option value="Supersonic">Supersonic</option>
+                <option value="Unity">Unity</option>
+                <option value="Vungle">Vungle</option>
+                <option value="Youtube">YouTube</option>
               </select>
             </div>
           </div>
