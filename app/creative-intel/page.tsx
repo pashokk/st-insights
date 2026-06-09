@@ -10,7 +10,7 @@ const DEFAULT_FORM: FormState = {
   platform: 'ios',
   days: '30',
   sortBy: 'share',
-  network: '',
+  network: 'Applovin',
   context: '',
 }
 
@@ -143,18 +143,13 @@ export default function CreativeIntelPage() {
             <div className="field">
               <label htmlFor="network">Ad network</label>
               <select id="network" value={form.network} onChange={set('network')}>
-                <option value="">All networks</option>
-                <option value="Admob">AdMob</option>
                 <option value="Applovin">AppLovin</option>
-                <option value="BidMachine">BidMachine</option>
-                <option value="Digital Turbine">Digital Turbine</option>
-                <option value="InMobi">InMobi</option>
-                <option value="Mintegral">Mintegral</option>
-                <option value="Moloco">Moloco</option>
-                <option value="Supersonic">Supersonic</option>
-                <option value="Unity">Unity</option>
-                <option value="Vungle">Vungle</option>
-                <option value="Youtube">YouTube</option>
+                <option value="Admob">AdMob</option>
+                <option value="Instagram">Instagram</option>
+                <option value="Mopub">MoPub</option>
+                <option value="Adcolony">AdColony</option>
+                <option value="Chartboost">Chartboost</option>
+                <option value="Pinterest">Pinterest</option>
               </select>
             </div>
           </div>

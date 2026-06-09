@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
         limit: '10',
         sort_by: sortBy || 'share',
       })
-      if (network) params.set('networks', network)
+      params.set('networks', network || 'Applovin')
 
       const stUrl = `https://api.sensortower.com/v1/${platform || 'ios'}/ad_intel/creatives?${params}`
 
@@ -44,7 +44,9 @@ export async function POST(req: NextRequest) {
             { status: 502 }
           )
         }
+        console.log('ST URL:', stUrl)
         const stData = await stRes.json()
+        console.log('ST response:', JSON.stringify(stData).slice(0, 800))
         creatives = stData.ad_units || stData.creatives || stData.data || []
       } catch (fetchErr) {
         return NextResponse.json(
