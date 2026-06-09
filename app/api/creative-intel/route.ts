@@ -22,19 +22,22 @@ export async function POST(req: NextRequest) {
     const allResults: AppResult[] = []
 
     for (const appId of appIds) {
-      const params = new URLSearchParams({
-        auth_token: stKey,
-        app_ids: appId,
-        start_date: start,
-        end_date: end,
-        limit: '10',
-        sort_by: sortBy || 'share',
-        networks: network || 'Applovin',
-        countries: countries || 'US,GB,JP,DE,FR',
-      })
+      // Build URL manually to avoid URLSearchParams encoding commas in countries/networks
+      const base = `https://api.sensortower.com/v1/${platform || 'ios'}/ad_intel/creatives`
+      const countryList = (countries || 'US,GB,JP,DE,FR,KR,BR,AU,CA,MX').split(',').map((c: string) => c.trim())
+      const qs = [
+        `auth_token=${encodeURIComponent(stKey)}`,
+        `app_ids=${encodeURIComponent(appId)}`,
+        `start_date=${start}`,
+        `end_date=${end}`,
+        `limit=10`,
+        `sort_by=${sortBy || 'share'}`,
+        `networks=${encodeURIComponent(network || 'Applovin')}`,
+        ...countryList.map((c: string) => `countries[]=${encodeURIComponent(c)}`),
+      ].join('&')
+      const stUrl = `${base}?${qs}`
 
-      console.log('ST URL:', `https://api.sensortower.com/v1/${platform || 'ios'}/ad_intel/creatives?app_ids=${appId}&start_date=${start}&end_date=${end}&networks=${network}&countries=${countries || 'US,GB,JP,DE,FR'}`)
-      const stUrl = `https://api.sensortower.com/v1/${platform || 'ios'}/ad_intel/creatives?${params}`
+      console.log('ST URL (clean):', `${base}?app_ids=${appId}&start_date=${start}&end_date=${end}&networks=${network || 'Applovin'}&countries=${countryList.join(',')}`)
 
       let creatives: STCreative[] = []
       try {
